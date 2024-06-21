@@ -1,7 +1,7 @@
-// Fetch data from a specified route with optional ID
+// fetcher.ts
 const fetcher = async (route: string, id?: string): Promise<any> => {
-  const baseUrl: string = process.env.BACKEND_URL as string; // Ensure baseUrl is a string
-  const url: string = `${baseUrl}${route}${id ? `/${id}` : ""}`; // Construct URL with optional ID
+  const baseUrl: string = process.env.BACKEND_URL as string;
+  const url: string = `${baseUrl}${route}${id ? `/${id}` : ""}`;
 
   try {
     const response: Response = await fetch(url, {
@@ -15,12 +15,12 @@ const fetcher = async (route: string, id?: string): Promise<any> => {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    return await response.json(); // Parse JSON response and return
+    return await response.json();
   } catch (error) {
     console.error(
       "Fetch error:",
       error instanceof Error ? error.message : String(error)
-    ); // Log any errors
+    );
     return null;
   }
 };
