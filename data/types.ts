@@ -1,4 +1,5 @@
 export type Federation = {
+  id: string;
   global: {
     api_endpoints: Record<string, Guardian>;
   };

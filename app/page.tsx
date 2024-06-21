@@ -1,17 +1,15 @@
-import StringifyJSON from "@/components/StringifyJSON";
+import FederationPreview from "@/components/FederationPreview";
 import {
   federationIdsTask,
   getFederationConfigTask,
   getFederationMetaTask,
 } from "@/data/queries";
-import { A, R, T, TE, pipeLog } from "@/utils/functions";
+import { A, T } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import "../data/geolocate";
-import { resolveUrl, testResolveUrl } from "../data/geolocate";
 
 export default async function Home() {
-  const data = await pipe(
+  const allFedsTask = pipe(
     federationIdsTask,
     T.chain(
       A.traverse(T.ApplicativePar)((id) =>
@@ -20,43 +18,19 @@ export default async function Home() {
             getFederationConfigTask(id),
             getFederationMetaTask(id)
           ),
-          TE.fromTask,
-          TE.map(
-            ([
-              {
-                global: { api_endpoints },
-              },
-              meta,
-            ]) =>
-              pipe(
-                api_endpoints,
-                R.toArray,
-                A.map(([, { url }]) => {
-                  testResolveUrl(url);
-                  return url;
-                })
-                // A.traverse(TE.ApplicativePar)(([, { url }]) => {
-                //   return () => resolveUrl(url)();
-                // })
-                // TE.fold(
-                //   (err) => {
-                //     return T.of(JSON.stringify(err));
-                //   },
-                //   (r) => {
-                //     return T.of(JSON.stringify(r));
-                //   }
-                // )
-              )
-          )
+          T.map(([config, meta]) => ({ ...config, id, meta }))
         )
       )
     )
-    // T.map(flow(A.dropLeft(1), A.takeLeft(1)))
-  )();
+  );
+
+  const federations = await allFedsTask();
 
   return (
     <main className="max-w-6xl mx-auto font-mono text-xl">
-      <StringifyJSON data={data} />
+      {federations.map((federation) => (
+        <FederationPreview key={federation.id} federation={federation} />
+      ))}
     </main>
   );
 }

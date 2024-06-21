@@ -12,6 +12,6 @@ export const getFederationConfigTask =
     fetcher(`/federations/${id}/config`);
 
 export const getFederationMetaTask =
-  (id: string): T.Task<Federation> =>
+  (id: string): T.Task<Federation["meta"]> =>
   () =>
     fetcher(`/federations/${id}/meta`);
