@@ -2,7 +2,7 @@ import type { Federation as FederationPreview } from "@/data/types";
 import React from "react";
 import StringifyJSON from "./StringifyJSON";
 
-const FederationPreview = ({
+const FederationPreview = async ({
   federation,
 }: {
   federation: FederationPreview;

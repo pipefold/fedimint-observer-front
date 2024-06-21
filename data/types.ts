@@ -1,5 +1,7 @@
 export type Federation = {
-  api_endpoints: Record<string, Guardian>;
+  global: {
+    api_endpoints: Record<string, Guardian>;
+  };
   consensus_version: FedimintVersion;
   meta: any; // Replace 'any' with the appropriate type when it's known
   modules: Record<string, FedimintModule>;

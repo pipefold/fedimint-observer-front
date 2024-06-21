@@ -1,32 +1,62 @@
-import { federationIdsTask, getFederationTask } from "@/data/queries";
-import { A, T } from "@/utils/functions";
+import StringifyJSON from "@/components/StringifyJSON";
+import {
+  federationIdsTask,
+  getFederationConfigTask,
+  getFederationMetaTask,
+} from "@/data/queries";
+import { A, R, T, TE, pipeLog } from "@/utils/functions";
+import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import FederationPreview from "../components/FederationPreview";
+import "../data/geolocate";
+import { resolveUrl, testResolveUrl } from "../data/geolocate";
 
 export default async function Home() {
-  const federations = await pipe(
+  const data = await pipe(
     federationIdsTask,
     T.chain(
       A.traverse(T.ApplicativePar)((id) =>
         pipe(
-          id,
-          getFederationTask,
-          T.map((federation) => ({ ...federation, id }))
+          sequenceT(T.ApplicativePar)(
+            getFederationConfigTask(id),
+            getFederationMetaTask(id)
+          ),
+          TE.fromTask,
+          TE.map(
+            ([
+              {
+                global: { api_endpoints },
+              },
+              meta,
+            ]) =>
+              pipe(
+                api_endpoints,
+                R.toArray,
+                A.map(([, { url }]) => {
+                  testResolveUrl(url);
+                  return url;
+                })
+                // A.traverse(TE.ApplicativePar)(([, { url }]) => {
+                //   return () => resolveUrl(url)();
+                // })
+                // TE.fold(
+                //   (err) => {
+                //     return T.of(JSON.stringify(err));
+                //   },
+                //   (r) => {
+                //     return T.of(JSON.stringify(r));
+                //   }
+                // )
+              )
+          )
         )
       )
     )
+    // T.map(flow(A.dropLeft(1), A.takeLeft(1)))
   )();
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex"></div>
-      {federations.map((federation) => (
-        <FederationPreview key={federation.id} federation={federation} />
-      ))}
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]"></div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left"></div>
+    <main className="max-w-6xl mx-auto font-mono text-xl">
+      <StringifyJSON data={data} />
     </main>
   );
 }
